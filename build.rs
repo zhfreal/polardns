@@ -12,28 +12,23 @@ fn main() {
         commit
     };
 
-    let mut features = Vec::new();
-    if std::env::var_os("CARGO_FEATURE_JEMALLOC").is_some() {
-        features.push("jemalloc");
+    let mut features: Vec<String> = std::env::vars()
+        .filter_map(|(k, _)| {
+            k.strip_prefix("CARGO_FEATURE_")
+                .map(|f| f.to_ascii_lowercase().replace('_', "-"))
+        })
+        .filter(|f| {
+            // Exclude synthetic internal crate dependency groupings
+            !matches!(f.as_str(), "rustls-stack" | "boring" | "default")
+        })
+        .collect();
+
+    // If the server-tls umbrella feature is enabled, suppress its constituent sub-features
+    if features.iter().any(|f| f == "server-tls") {
+        features.retain(|f| !matches!(f.as_str(), "server-doh" | "server-dot" | "server-h3"));
     }
-    if std::env::var_os("CARGO_FEATURE_QUICHE").is_some() {
-        features.push("quiche");
-    }
-    if std::env::var_os("CARGO_FEATURE_ORIGINAL").is_some() {
-        features.push("original");
-    }
-    if std::env::var_os("CARGO_FEATURE_BORING").is_some() {
-        features.push("boring");
-    }
-    if std::env::var_os("CARGO_FEATURE_ORIGINAL_H3_SERVER").is_some() {
-        features.push("original-h3-server");
-    }
-    if std::env::var_os("CARGO_FEATURE_UPSTREAM_H3").is_some() {
-        features.push("upstream-h3");
-    }
-    if std::env::var_os("CARGO_FEATURE_TLS12").is_some() {
-        features.push("tls12");
-    }
+
+    features.sort();
     let features_str = if features.is_empty() {
         "none".to_string()
     } else {

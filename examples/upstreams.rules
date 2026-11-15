@@ -1,0 +1,17 @@
+# Pass this file with:
+#   chinadns-rs --upstream-rule examples/upstreams.rules
+#
+# Syntax:
+#   <domain-rule-file>@<tag>
+#   <domain-rule-file>,<tag>
+#
+# Tags may be direct, proxy, adblock, or a custom group created with --group.
+# Rules are evaluated in file order; the first matching DNL rule decides the tag.
+
+examples/rules/direct-provider.yaml@direct
+examples/rules/proxy-classical.rules@proxy
+examples/rules/adblock-provider.yaml@adblock
+
+# Custom group example:
+#   chinadns-rs --group streaming --group-upstream streaming:https://dns.example/dns-query
+# examples/rules/streaming-provider.yaml@streaming

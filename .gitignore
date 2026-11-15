@@ -1,0 +1,50 @@
+# Build output
+/target/
+/dist/
+/bench_test/
+
+# Local Cargo configuration
+/.cargo/*
+!/.cargo/config.toml
+
+# Generated or temporary Rust files
+**/*.rs.bk
+
+# Local config and secrets
+**/*.conf
+!examples/config.conf
+*.pem
+*.key
+*.crt
+*.cer
+*.p12
+*.pfx
+.env
+.env.*
+
+# Logs and runtime state
+*.log
+*.pid
+server.log
+server.pid
+log.txt
+monitor.*
+
+# Test and benchmark scratch files
+benchmark*
+test_*.*
+flood.py
+
+# Coverage and profiling output
+*.profraw
+*.profdata
+coverage/
+flamegraph.svg
+perf.data*
+
+# Editors and OS metadata
+.vscode/
+.idea/
+*.swp
+*.swo
+.DS_Store

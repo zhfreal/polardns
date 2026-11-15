@@ -1,0 +1,15 @@
+# Mihomo/Clash provider-domain YAML format.
+# Both payload: and rules: arrays are accepted.
+payload:
+  # Exact domain only.
+  - example.cn
+
+  # Suffix rule: matches example.cn and every subdomain.
+  - '+.cn'
+
+  # Subdomain-only suffix: matches a.lan but not lan itself.
+  - '.lan'
+
+  # Provider wildcard: label-aware * and ? matching.
+  - '*.direct.example'
+  - 'api?.service.example'

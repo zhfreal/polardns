@@ -1,0 +1,42 @@
+[Unit]
+Description=chinadns-rs DNS proxy
+Documentation=https://github.com/zhfreal/chinadns-rs
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+Type=simple
+User=chinadns
+Group=chinadns
+
+# Adjust the binary path if you install to /usr/bin or another location.
+ExecStart=/usr/local/bin/chinadns-rs --config /etc/chinadns-rs/config.toml
+ExecReload=/bin/kill -HUP $MAINPID
+
+Restart=on-failure
+RestartSec=3s
+LimitNOFILE=1048576
+
+# Required for non-root binding to ports below 1024, ipset/nft netlink sync, and interface SO_BINDTODEVICE.
+AmbientCapabilities=CAP_NET_BIND_SERVICE CAP_NET_ADMIN CAP_NET_RAW
+CapabilityBoundingSet=CAP_NET_BIND_SERVICE CAP_NET_ADMIN CAP_NET_RAW
+NoNewPrivileges=true
+
+# Runtime and writable paths used by examples/config.toml.
+RuntimeDirectory=chinadns-rs
+StateDirectory=chinadns-rs
+CacheDirectory=chinadns-rs
+LogsDirectory=chinadns-rs
+ReadWritePaths=/var/cache/chinadns-rs /var/log/chinadns-rs /run/chinadns-rs
+
+# Conservative service hardening. Relax these if your local deployment needs more access.
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX AF_NETLINK
+
+[Install]
+WantedBy=multi-user.target

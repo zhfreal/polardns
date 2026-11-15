@@ -1,0 +1,5 @@
+# Mihomo/Clash provider-domain YAML mapped to the adblock tag by upstreams.rules.
+payload:
+  - ads.example
+  - '+.tracker.example'
+  - '*.telemetry.example'

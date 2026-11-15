@@ -1,0 +1,13 @@
+# Clash/Mihomo classical rule-provider format.
+# A trailing target token such as PROXY is accepted for compatibility, but
+# chinadns-rs uses the tag assigned to this file in upstreams.rules.
+
+DOMAIN,google.com,PROXY
+DOMAIN-SUFFIX,googleapis.com,PROXY
+DOMAIN-KEYWORD,google,PROXY
+DOMAIN-WILDCARD,*.googlevideo.com,PROXY
+DOMAIN-REGEX,^(.+\.)?githubusercontent\.com$
+
+# Provider-domain syntax can be mixed into the same file when useful.
++.github.com
+*.githubassets.com

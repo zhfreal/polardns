@@ -1,0 +1,321 @@
+# Comprehensive chinadns-rs YAML Configuration File
+# Run with: chinadns-rs --config /etc/chinadns-rs/config.yaml
+
+# ==============================================================================
+# 1. CORE & LISTENER SETTINGS
+# ==============================================================================
+# Workspace base directory for resolving relative paths (e.g. for rules, certificates, databases).
+# Can also be set via CHINADNS_WORKSPACE env variable or -w / --workspace CLI flag.
+workspace: "/etc/chinadns-rs"
+
+# Custom User-Agent header string for HTTP requests (DoH, DoH3, Web rules)
+# user_agent: "chinadns-rs/1.17.0"
+
+# Filter IPv6 rules globally for all groups (equivalent to --no-ipv6).
+# Can be a boolean `true` or a comma-separated list of tags (e.g. "direct,proxy").
+# no_ipv6: "direct,proxy"
+
+# Filter specific DNS query types (e.g. 28 for AAAA, 65 for HTTPS) globally for all queries.
+# filter_qtype: [65]
+
+listeners:
+  # Listener IP addresses or Unix Domain Sockets (unix:/path or unixgram:/path)
+  bind_addr:
+    - "127.0.0.1"
+    - "::1"
+  
+  # Standard DNS (UDP/TCP) listener ports
+  bind_port: [1054]
+  
+  # Specific listener endpoints (address:port pairs or Unix sockets)
+  listen: []
+  
+  # Bind to specific network interfaces
+  interface: []
+
+  # Exclude specific network interfaces (e.g. ["wlan*", "eth1"])
+  # (CLI equivalent: --except-interface)
+  except_interface: []
+
+  # Statically bind to interfaces using SO_BINDTODEVICE
+  # (CLI equivalent: -z / --bind-interfaces)
+  bind_interfaces: false
+
+  # Dynamically bind individual sockets to interface IPs (dnsmasq style)
+  # (CLI equivalents: --bind-dynamic, --bind)
+  bind_dynamic: false
+
+  # Disable binding to IPv6 Link-Local (fe80::/10) addresses globally
+  # no_ipv6_link_local: false
+
+  # Listen on UDP only (disables local TCP listener)
+  udp_only: false
+
+  # ============================================================================
+  # 2. LOCAL DoT / DoH / DoH3 LISTENER SETTINGS
+  # ============================================================================
+  tls:
+    # Bind TLS listeners to specific network interfaces (independent of plain DNS)
+    # interface: []
+
+    # Exclude specific network interfaces for TLS listeners
+    # (CLI equivalent: --tls-except-interface)
+    # except_interface: []
+
+    # Statically bind TLS listeners to interfaces using SO_BINDTODEVICE
+    # (CLI equivalent: --tls-bind-interfaces)
+    # bind_interfaces: false
+
+    # Dynamically bind TLS individual sockets to interface IPs
+    # (CLI equivalents: --tls-bind-dynamic, --tls-bind)
+    # bind_dynamic: false
+
+    # Bind TLS listeners to specific addresses (independent of plain DNS)
+    # bind_addr: []
+
+    # Disable binding to IPv6 Link-Local (fe80::/10) addresses for TLS listeners
+    # no_ipv6_link_local: false
+
+    # Enable DNS-over-TLS (DoT) listener
+    enable_dot: false
+    dot_port: [853]
+    
+    # Enable DNS-over-HTTPS (DoH) listener
+    enable_doh: false
+    doh_port: [443]
+    doh_path: "/dns-query"
+    
+    # Enable DNS-over-HTTP/3 (DoH3 over QUIC). Requires enable_doh: true.
+    enable_doh3: false
+    
+    # Enable DNS-over-QUIC (DoQ) listener (RFC 9250)
+    enable_doq: false
+    doq_port: [853]
+    
+    # Idle timeout for QUIC (DoH3 and DoQ) connections in milliseconds (default: 30000ms / 30s)
+    quic_idle_timeout_ms: 30000
+    
+    # TLS cert & key files
+    cert_file: "/etc/chinadns-rs/tls/default.crt"
+    key_file: "/etc/chinadns-rs/tls/default.key"
+    
+    # Additional cert/key pairs for SNI
+    cert_pairs:
+      # - cert: "/etc/chinadns-rs/tls/cert1.pem"
+      #   key: "/etc/chinadns-rs/tls/key1.pem"
+      # - cert: "/etc/chinadns-rs/tls/combined.pem"
+    
+    strict_sni: false
+    enable_tls12: false
+
+# ==============================================================================
+# 3. UPSTREAM DNS CONFIGURATION & ROUTING TARGET SETS
+# ==============================================================================
+# Upstream server URLs support inline attributes (|ca=... and |mark=...)
+upstreams:
+  direct:
+    servers:
+      - "223.5.5.5|mark=50"
+      - "119.29.29.29"
+    all: false
+    sets:
+      - "direct"
+      - "directv6"
+    no_ipv6: false
+    filter_qtype: []
+
+  proxy:
+    # Supports per-upstream ca and mark configuration via '|key=value' attributes
+    servers:
+      - "tls://1.1.1.1:853|mark=100"
+      - "https://1.1.1.1/dns-query"
+    all: false
+    sets:
+      - "proxy"
+      - "proxyv6"
+    no_ipv6: true
+    filter_qtype: [28]
+
+  fallback:
+    # Bootstrap resolver only — no_ipv6/filter_qtype not supported here
+    servers:
+      - "223.5.5.5|mark=150"
+    all: false
+
+  tuning:
+    repeat_times: 1
+    out_mark: 100
+    group_upstream_all: false
+    # rtt_samples: 9
+    # rtt_failure_penalty: 1000
+    # rtt_probe_interval: 15     # Seconds between background active RTT probes (0 to disable)
+    # rtt_probe_timeout_ms: 2000 # Timeout in milliseconds for background active RTT probe queries
+
+  # ============================================================================
+  # 4. CUSTOM GROUPS
+  # ============================================================================
+  # Define custom tags/groups here. Each table entry defines a group name.
+  # Up to 253 custom groups can be dynamically registered (expanded from 6).
+  groups:
+    streaming:
+      servers:
+        - "https://dns.example/dns-query|ca=/etc/ssl/certs/ca-certificates.crt|mark=200"
+      sets:
+        - "streaming_set4"
+        - "streaming_set6"
+      all: false
+      no_ipv6: false
+      filter_qtype: []
+
+    work:
+      servers:
+        - "10.0.0.1:53"
+        - "10.0.0.2:53"
+      sets:
+        - "work_set"
+      all: true
+      no_ipv6: false
+      filter_qtype: []
+
+# ==============================================================================
+# 5. Global Adblock List
+# ==============================================================================
+# Can contain local paths, or structured web rule entries for periodic fetching.
+adblock:
+  - "/etc/chinadns-rs/adblock-base.list"
+  # - path: rules/adblock-remote.txt
+  #   url: https://easylist.to/easylist/easylist.txt
+  #   refresh: 86400
+
+# ==============================================================================
+# 6. RULE-BASED DNL ROUTING (Ordered Execution)
+# ==============================================================================
+rules:
+  # Remote web-fetched rules (automatically downloaded to `path` and refreshed periodically in seconds)
+  # - type: upstream
+  #   path: rules/gfw-remote.txt
+  #   url: https://raw.githubusercontent.com/gfwlist/gfwlist/master/gfwlist.txt
+  #   refresh: 86400
+  #   tag: proxy
+
+  - type: upstream
+    domains:
+      - "DOMAIN,example.com"
+      - "DOMAIN-SUFFIX,google.com"
+      - "DOMAIN-KEYWORD,twitter"
+      - "github.com"
+      - "*.bing.com"
+    tag: proxy
+
+  - type: upstream
+    path: rules/direct-provider.yaml
+    tag: direct
+
+  - type: upstream
+    path: rules/proxy-classical.rules
+    tag: proxy
+
+  # Route specific domains using the custom "streaming" group defined above
+  - type: upstream
+    path: rules/streaming-media.yaml
+    tag: streaming
+
+  # Additional rule file routing specific domains to the custom "work" group
+  - type: upstream
+    path: rules/corporate-domains.list
+    tag: work
+  - type: default
+    tag: direct
+
+# ==============================================================================
+# 7. HOSTS & LOCAL OVERRIDES
+# ==============================================================================
+hosts:
+  hosts_file: /etc/hosts
+  rr_records:
+    example.com: ["1.2.3.4"]
+    sub.example.com: ["::1"]
+
+# ==============================================================================
+# 8. DNS CACHING
+# ==============================================================================
+cache:
+  size: 4096
+  stale: 86400
+  refresh: 20
+  nodata_ttl: 60
+  # min_ttl: 300
+  # max_ttl: 86400
+  cache_ignore:
+    - apple.com
+  cleanup_interval: 600
+  db_path: /var/cache/chinadns-rs/cache.db
+
+# ==============================================================================
+# 9. SSL CERTIFICATE VALIDATION
+# ==============================================================================
+ssl:
+  cert_verify: false
+  ca_certs: /etc/ssl/certs/ca-certificates.crt
+
+# ==============================================================================
+# 10. IPSET / NFTSET INTEGRATION (Requires CAP_NET_ADMIN)
+# ==============================================================================
+ipset:
+  no_ipset_blacklist: false
+
+# ==============================================================================
+# 11. RESOURCE LIMITS & SOCKET TUNING
+# ==============================================================================
+limits:
+  timeout_ms: 1000
+  tcp_idle_timeout_ms: 10000
+  # Timeout in milliseconds for waiting to acquire an internal query queue permit before dropping under saturation
+  queue_timeout_ms: 2000
+  # Number of Tokio worker threads (default: available CPU cores, or 1 on single-core / low-end)
+  # worker_threads: 2
+  # Tokio worker thread stack size in bytes (default: 524288 / 512KB for low-end / embedded devices)
+  # thread_stack_size: 524288
+  # Background active RTT probe frequency in seconds (0 to disable)
+  # rtt_probe_interval: 15
+  # Timeout in milliseconds for background active RTT probe queries
+  # rtt_probe_timeout_ms: 2000
+  max_concurrent_queries: 1000
+  max_client_connections: 1024
+  max_background_refreshes: 256
+  max_upstream_conns: 16
+  socket_buffer_size: 1048576
+  reuse_port: false
+  # HTTP/3 & QUIC performance profile (options: low, balanced, high)
+  #   - low:      Optimized for OpenWrt / embedded routers (32MB-64MB RAM). Keeps HTTP/3 memory < 2MB RSS.
+  #   - balanced: Default profile for home servers, NAS, and small VPS instances (128MB+ RAM).
+  #   - high:     High-throughput profile for cloud servers and high-concurrency deployments.
+  # h3_profile: "balanced"
+  # h3_low_memory: false
+
+# ==============================================================================
+# 12. LOGGING & DIAGNOSTICS
+# ==============================================================================
+logging:
+  # General log level (options: trace, debug, info, warn, error)
+  log_level: "info"
+
+  # Log DNS match results to a file (format: domain,Tag,Rule)
+  log_dns_match: /var/log/chinadns-rs/match.log
+
+  # Log DNS resolution results to a file
+  # log_dns_result: /var/log/chinadns-rs/result.log
+
+  # Log standard output/error to a specific file
+  # log_file: /var/log/chinadns-rs/chinadns.log
+
+  # Alternatively, write rolling log files to a directory
+  # log_dir: /var/log/chinadns-rs/
+
+  # Log rotation settings (when log_dir is used)
+  # log_rotation_period: "daily"  # Options: hourly, daily, never
+  # log_rotation_size: "10M"      # e.g., 10M, 100M
+  # log_max_files: 10
+
+  # Enable verbose debug output
+  verbose: false

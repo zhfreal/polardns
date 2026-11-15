@@ -95,7 +95,7 @@ async fn async_main(options: opt::Opt) -> anyhow::Result<()> {
     // Initialize standard logging (with non-blocking console & rolling file writers)
     let (_console_guard, _file_guard) = init_logging(&options);
 
-    info!("Starting chinadns-rs {}...", build_info::VERSION);
+    info!("Starting polardns {}...", build_info::VERSION);
 
     // Set verbose trace level if requested
     if options.verbose {
@@ -158,6 +158,7 @@ async fn async_main(options: opt::Opt) -> anyhow::Result<()> {
     // Custom groups registration
     for gname in &options.group {
         if gname == "chn"
+            || gname == "polar"
             || gname == "gfw"
             || gname == "direct"
             || gname == "proxy"
@@ -206,7 +207,7 @@ async fn async_main(options: opt::Opt) -> anyhow::Result<()> {
         }
     } else {
         eprintln!(
-            "Error: --default-tag '{}' must be 'direct', 'proxy' (or legacy 'chn', 'gfw'), or a custom group name defined in --group",
+            "Error: --default-tag '{}' must be 'direct', 'proxy' (or 'polar', legacy 'chn', 'gfw'), or a custom group name defined in --group",
             options.default_tag
         );
         std::process::exit(1);

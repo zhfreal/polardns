@@ -17,7 +17,7 @@ use hyper_util::rt::{TokioExecutor, TokioIo};
 #[cfg(all(feature = "boring", not(feature = "rustls-stack")))]
 use tower_service::Service;
 
-pub const DEFAULT_USER_AGENT: &str = concat!("chinadns-rs/", env!("CARGO_PKG_VERSION"));
+pub const DEFAULT_USER_AGENT: &str = concat!("polardns/", env!("CARGO_PKG_VERSION"));
 pub const MAX_DOH_RESPONSE_SIZE: u64 = 64 * 1024;        // 64 KiB
 pub const MAX_RULE_DOWNLOAD_SIZE: u64 = 10 * 1024 * 1024; // 10 MiB
 

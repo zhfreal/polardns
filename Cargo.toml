@@ -1,8 +1,10 @@
 [package]
-name = "chinadns-rs"
+name = "polardns"
 version = "1.23.0"
 edition = "2024"
 license = "AGPL-3.0-only"
+description = "A next-generation high-performance rule-based DNS proxy/router."
+repository = "https://github.com/polardns/polardns"
 
 [features]
 default = [

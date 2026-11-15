@@ -1,15 +1,15 @@
-# Comprehensive chinadns-rs YAML Configuration File
-# Run with: chinadns-rs --config /etc/chinadns-rs/config.yaml
+# Comprehensive polardns YAML Configuration File
+# Run with: polardns --config /etc/polardns/config.yaml
 
 # ==============================================================================
 # 1. CORE & LISTENER SETTINGS
 # ==============================================================================
 # Workspace base directory for resolving relative paths (e.g. for rules, certificates, databases).
-# Can also be set via CHINADNS_WORKSPACE env variable or -w / --workspace CLI flag.
-workspace: "/etc/chinadns-rs"
+# Can also be set via POLARDNS_WORKSPACE env variable or -w / --workspace CLI flag.
+workspace: "/etc/polardns"
 
 # Custom User-Agent header string for HTTP requests (DoH, DoH3, Web rules)
-# user_agent: "chinadns-rs/1.17.0"
+# user_agent: "polardns/1.17.0"
 
 # Filter IPv6 rules globally for all groups (equivalent to --no-ipv6).
 # Can be a boolean `true` or a comma-separated list of tags (e.g. "direct,proxy").
@@ -96,14 +96,14 @@ listeners:
     quic_idle_timeout_ms: 30000
     
     # TLS cert & key files
-    cert_file: "/etc/chinadns-rs/tls/default.crt"
-    key_file: "/etc/chinadns-rs/tls/default.key"
+    cert_file: "/etc/polardns/tls/default.crt"
+    key_file: "/etc/polardns/tls/default.key"
     
     # Additional cert/key pairs for SNI
     cert_pairs:
-      # - cert: "/etc/chinadns-rs/tls/cert1.pem"
-      #   key: "/etc/chinadns-rs/tls/key1.pem"
-      # - cert: "/etc/chinadns-rs/tls/combined.pem"
+      # - cert: "/etc/polardns/tls/cert1.pem"
+      #   key: "/etc/polardns/tls/key1.pem"
+      # - cert: "/etc/polardns/tls/combined.pem"
     
     strict_sni: false
     enable_tls12: false
@@ -182,7 +182,7 @@ upstreams:
 # ==============================================================================
 # Can contain local paths, or structured web rule entries for periodic fetching.
 adblock:
-  - "/etc/chinadns-rs/adblock-base.list"
+  - "/etc/polardns/adblock-base.list"
   # - path: rules/adblock-remote.txt
   #   url: https://easylist.to/easylist/easylist.txt
   #   refresh: 86400
@@ -249,7 +249,7 @@ cache:
   cache_ignore:
     - apple.com
   cleanup_interval: 600
-  db_path: /var/cache/chinadns-rs/cache.db
+  db_path: /var/cache/polardns/cache.db
 
 # ==============================================================================
 # 9. SSL CERTIFICATE VALIDATION
@@ -301,16 +301,16 @@ logging:
   log_level: "info"
 
   # Log DNS match results to a file (format: domain,Tag,Rule)
-  log_dns_match: /var/log/chinadns-rs/match.log
+  log_dns_match: /var/log/polardns/match.log
 
   # Log DNS resolution results to a file
-  # log_dns_result: /var/log/chinadns-rs/result.log
+  # log_dns_result: /var/log/polardns/result.log
 
   # Log standard output/error to a specific file
-  # log_file: /var/log/chinadns-rs/chinadns.log
+  # log_file: /var/log/polardns/polardns.log
 
   # Alternatively, write rolling log files to a directory
-  # log_dir: /var/log/chinadns-rs/
+  # log_dir: /var/log/polardns/
 
   # Log rotation settings (when log_dir is used)
   # log_rotation_period: "daily"  # Options: hourly, daily, never

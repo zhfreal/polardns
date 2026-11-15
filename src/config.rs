@@ -494,11 +494,11 @@ impl ConfigFile {
         if let Some(upstreams) = self.upstreams {
             if let Some(direct) = upstreams.direct {
                 if let Some(servers) = direct.servers {
-                    add_arg!("--direct-dns", &["--direct-dns", "-c", "--china-dns"], servers.join(","));
+                    add_arg!("--direct-dns", &["--direct-dns", "-c", "--polar-dns"], servers.join(","));
                 }
-                add_flag!("--direct-dns-all", &["--direct-dns-all", "--china-dns-all"], direct.all.unwrap_or(false));
+                add_flag!("--direct-dns-all", &["--direct-dns-all", "--polar-dns-all"], direct.all.unwrap_or(false));
                 if let Some(sets) = direct.sets {
-                    add_arg!("--direct-sets", &["--direct-sets", "--chn-sets"], sets.join(","));
+                    add_arg!("--direct-sets", &["--direct-sets", "--polar-sets", "--chn-sets"], sets.join(","));
                 }
             }
             if let Some(proxy) = upstreams.proxy {

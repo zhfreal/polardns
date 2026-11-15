@@ -63,7 +63,7 @@ impl Tag {
 
     pub fn from_name(name: &str) -> Option<Self> {
         match name {
-            "direct" | "chn" => Some(Tag::Direct),
+            "direct" | "polar" | "chn" => Some(Tag::Direct),
             "proxy" | "gfw" => Some(Tag::Proxy),
             "hosts" => Some(Tag::Hosts),
             "adblock" | "block" => Some(Tag::Adblock),
@@ -113,6 +113,7 @@ mod tests {
     #[test]
     fn test_from_name() {
         assert_eq!(Tag::from_name("direct"), Some(Tag::Direct));
+        assert_eq!(Tag::from_name("polar"), Some(Tag::Direct));
         assert_eq!(Tag::from_name("chn"), Some(Tag::Direct));
         assert_eq!(Tag::from_name("proxy"), Some(Tag::Proxy));
         assert_eq!(Tag::from_name("gfw"), Some(Tag::Proxy));

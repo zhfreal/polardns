@@ -2302,12 +2302,12 @@ mod tests {
     #[test]
     fn test_encrypted_upstream_parse_inline_ca() {
         let tls = TlsOptions {
-            ca_certs: Some("/etc/chinadns-ng/dns1-ca.pem".to_string()),
+            ca_certs: Some("/etc/polardns/dns1-ca.pem".to_string()),
             mark: None,
         };
 
         assert_eq!(
-            UpstreamProtocol::parse("tls://dns1.example.com:853|ca=/etc/chinadns-ng/dns1-ca.pem"),
+            UpstreamProtocol::parse("tls://dns1.example.com:853|ca=/etc/polardns/dns1-ca.pem"),
             Some(UpstreamProtocol::Dot {
                 addr: None,
                 hostname: "dns1.example.com".to_string(),
@@ -2318,7 +2318,7 @@ mod tests {
 
         assert_eq!(
             UpstreamProtocol::parse(
-                "https://dns1.example.com/dns-query|ca=/etc/chinadns-ng/dns1-ca.pem"
+                "https://dns1.example.com/dns-query|ca=/etc/polardns/dns1-ca.pem"
             ),
             Some(UpstreamProtocol::Doh {
                 url: "https://dns1.example.com/dns-query".to_string(),
@@ -2329,7 +2329,7 @@ mod tests {
         #[cfg(any(feature = "upstream-h3", feature = "quiche"))]
         assert_eq!(
             UpstreamProtocol::parse(
-                "h3://dns1.example.com/dns-query|ca=/etc/chinadns-ng/dns1-ca.pem"
+                "h3://dns1.example.com/dns-query|ca=/etc/polardns/dns1-ca.pem"
             ),
             Some(UpstreamProtocol::DohH3 {
                 url: "https://dns1.example.com/dns-query".to_string(),
@@ -2342,7 +2342,7 @@ mod tests {
             let _ = tls;
             assert!(
                 UpstreamProtocol::parse(
-                    "h3://dns1.example.com/dns-query|ca=/etc/chinadns-ng/dns1-ca.pem"
+                    "h3://dns1.example.com/dns-query|ca=/etc/polardns/dns1-ca.pem"
                 )
                 .is_none()
             );

@@ -1,5 +1,5 @@
 # Pass this file with:
-#   chinadns-rs --upstream-rule examples/upstreams.rules
+#   polardns --upstream-rule examples/upstreams.rules
 #
 # Syntax:
 #   <domain-rule-file>@<tag>
@@ -13,5 +13,5 @@ examples/rules/proxy-classical.rules@proxy
 examples/rules/adblock-provider.yaml@adblock
 
 # Custom group example:
-#   chinadns-rs --group streaming --group-upstream streaming:https://dns.example/dns-query
+#   polardns --group streaming --group-upstream streaming:https://dns.example/dns-query
 # examples/rules/streaming-provider.yaml@streaming

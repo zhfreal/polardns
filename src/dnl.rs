@@ -1449,7 +1449,7 @@ mod tests {
 
         // 3. Mock ServerState using Opt parsed from vector
         let opt = std::sync::Arc::new(crate::opt::Opt::parse_from(vec![
-            "chinadns-rs",
+            "polardns",
             "--hosts",
             hosts_file.path().to_str().unwrap(),
         ]));
@@ -1538,7 +1538,7 @@ mod tests {
         let _guard = TEST_MUTEX.lock().unwrap();
 
         // 1. Read actual system config or fallback to sample
-        let config_path = "/etc/chinadns-ng/config.conf";
+        let config_path = "/etc/polardns/config.conf";
         let config_content = match std::fs::read_to_string(config_path) {
             Ok(c) => c,
             Err(_) => return, // Skip test if system config is not readable (e.g. non-existent on non-test system)
@@ -1631,7 +1631,7 @@ mod tests {
 
         // 1. Mock ServerState with cache configurations
         let opt = std::sync::Arc::new(crate::opt::Opt::parse_from(vec![
-            "chinadns-rs",
+            "polardns",
             "--cache",
             "10",
             "--cache-max-ttl",
@@ -1746,7 +1746,7 @@ mod tests {
     async fn test_production_rules_comprehensive() {
         let _guard = TEST_MUTEX.lock().unwrap();
 
-        let rules_path = "/etc/chinadns-ng/upstream.rules";
+        let rules_path = "/etc/polardns/upstream.rules";
         let rules_content = match std::fs::read_to_string(rules_path) {
             Ok(c) => c,
             Err(_) => return, // Skip on non-production systems

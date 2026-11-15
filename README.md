@@ -1,12 +1,12 @@
-# chinadns-rs (chinadns/chinadns-ng's Rust rewrite)
+# PolarDNS
 
-chinadns-rs is a next-generation high-performance DNS proxy engineered to defend against DNS poisoning. This repository hosts the **100% Native Rust Rewrite** of the original C/Zig daemon.
+PolarDNS is a next-generation high-performance rule-based DNS proxy and router engineered for modern network environments. Written 100% in native Rust, it is designed from the ground up for maximum throughput, memory safety, and flexible policy-based traffic routing.
 
-By abandoning the legacy custom epoll C-wrappers, manual byte-shifting, and raw Netlink memory packing, this edition brings unmatched **Memory Safety** and lightning-fast **tokio-based Concurrency** without sacrificing a single ounce of deployment speed!
+Featuring unmatched **Memory Safety** and lightning-fast **tokio-based Concurrency**, PolarDNS delivers extreme performance across cloud servers, home gateways, and resource-constrained embedded routers without sacrificing deployment speed or flexibility!
 
-## 🚀 Key Upgrades & Features (Compared to C/Zig chinadns-ng)
+## 🚀 Key Features & Capabilities
 
-### 💎 User-Facing Features (New in Rust version)
+### 💎 User-Facing Features (Native Rust Engine)
 
 * **Local DoT, DoH, DoH3 & DoQ Server Listeners**: Serves local DNS clients over TLS (DoT), HTTPS (DoH), HTTP/3 (DoH3/QUIC), and DNS-over-QUIC (DoQ, RFC 9250) with SNI-based certificate selection (`--cert-pair`), TLS 1.3/1.2 control, and strict SNI mode.
 * **Flexible Rule-Based Routing**: Use `--upstream-rule` to bind multiple Clash/Mihomo-style domain list files to custom routing tags/groups with globally consistent priority order, replacing the rigid legacy lists.
@@ -18,22 +18,22 @@ By abandoning the legacy custom epoll C-wrappers, manual byte-shifting, and raw 
 * **Asynchronous Match Tracing**: Buffered, non-blocking logs of domain-to-tag matches via `--log-dns-match` for precise debugging without impacting query path performance.
 * **Millisecond-Precision Timeouts & Intervals**: Added `--timeout-ms` for granular control, `--queue-timeout-ms` for queue saturation shed timeout, `--rtt-probe-interval` for background probe scheduling, and `--rtt-probe-timeout-ms` for active probe query timeouts.
 * **Embedded & Low-End Device Support**: Configure worker thread count via `--worker-threads` / `--threads` and thread stack size via `--thread-stack-size` (defaults to 512KB for embedded targets, reducing virtual and resident memory significantly vs the glibc 8MB default). Automatic jemalloc dirty/muzzy page purging minimizes resident set size on low-memory routers.
-* **Comprehensive Legacy Aliases**: Retained full compatibility with chinadns-ng arguments such as `-a` (`--bind-address`), `-p` / `-l` (`--bind-port`, `--dns-port`), `--tls-port`, `--bind` (alias for `--bind-dynamic`), and `--tls-bind`.
+* **Comprehensive CLI Aliases**: Flexible argument handling including `-a` (`--bind-address`), `-p` / `-l` (`--bind-port`, `--dns-port`), `--tls-port`, `--bind` (alias for `--bind-dynamic`), and `--tls-bind`.
 * **Advanced Interface Binding (dnsmasq-style)**: Support for `-z / --bind-interfaces` (strict static binding) and `--bind-dynamic` (smart per-IP interface binding) with `-I / --except-interface` blacklisting support.
 
 ### ⚡ Architectural & Performance Upgrades
 
-* **Dual Crypto & HTTP/3 Engine Architecture**: Complete native Rust rewrite with zero legacy C wrappers, offering two selectable engines: a 100% Pure Rust engine (`original`, zero C/CMake dependencies) and an enterprise-grade `quiche` engine (Cloudflare quiche + Google BoringSSL + Hyper) optimized for minimal memory footprint (~14 MB RSS) and full DoQ/DoH3 client and server support.
+* **Dual Crypto & HTTP/3 Engine Architecture**: Complete native Rust architecture with zero legacy C wrappers, offering two selectable engines: a 100% Pure Rust engine (`original`, zero C/CMake dependencies) and an enterprise-grade `quiche` engine (Cloudflare quiche + Google BoringSSL + Hyper) optimized for minimal memory footprint (~14 MB RSS) and full DoQ/DoH3 client and server support.
 * **Zero-Allocation DNS Parser**: A custom-engineered DNS parser parses incoming packets directly from raw byte slices with zero allocations, offering safety against memory overflows and extreme throughput.
 * **Native Netlink bindings via Rustix**: Integrates with the Linux kernel via `AF_NETLINK` using zero-allocation packed structures to dynamically sync DNS results to `ipset` and `nftables` without spawning sub-shells.
-* **Standard Async I/O (Tokio)**: Replaced the custom-rolled Zig coroutine/reactor engine with modern, highly optimized `tokio` multi-threading multiplexers.
+* **Standard Async I/O (Tokio)**: Modern, highly optimized `tokio` multi-threading multiplexers.
 * **Resilient Connection Pooling**: Advanced semaphore-controlled client lease pool with TCP Keepalive probes to handle heavy multi-threaded throughput.
 * **DoS & Slowloris Protection**: Built-in global query rate limiting and socket idle timeouts (`--tcp-idle-timeout-ms`).
 * **Adaptive Cache RAM Management (Smart Shrink)**: Automatically releases unused RAM back to the OS during periods of low DNS caching activity.
 
 ## 🧠 Core Mechanics & Routing Logic
 
-`chinadns-rs` employs a high-performance matching and routing engine engineered for speed and memory efficiency.
+`polardns` employs a high-performance matching and routing engine engineered for speed and memory efficiency.
 
 ### 1. Match Order (Fast Path First)
 Every incoming DNS request follows a fixed routing order. Exact domains and suffix rules use allocation-free fast indexes; wildcard, keyword, and regex rules are evaluated only when present:
@@ -44,12 +44,12 @@ Every incoming DNS request follows a fixed routing order. Exact domains and suff
 
 ### 2. Upstream Routing Rules
 - **Advanced Mode (Recommended)**: Uses `--upstream-rule <file>`. Define an ordered list of `<dnl file>@<tag>` where the first matching DNL rule wins and routes the query to that tag.
-- **Legacy Mode (Deprecated)**: Uses `--chnlist-file` and `--gfwlist-file`. Priority is determined by `--chnlist-first`.
-- **Supported Tags**: `direct`, `proxy` (with legacy aliases `chn`, `gfw`), or any custom group name defined via `--group`.
+- **Legacy Mode (Deprecated)**: Uses `--directlist-file` (or legacy `--chnlist-file`) and `--gfwlist-file`. Priority is determined by `--directlist-first` (or legacy `--chnlist-first`).
+- **Supported Tags**: `direct` (with aliases `polar`, `chn`), `proxy` (with legacy alias `gfw`), or any custom group name defined via `--group`.
 - **Mihomo-Compatible Domains**: Rule files support provider-domain syntax (`example.com`, `+.example.com`, `.example.com`, `*.example.com`, embedded `*`/`?` wildcards) and classical `DOMAIN`, `DOMAIN-SUFFIX`, `DOMAIN-KEYWORD`, `DOMAIN-WILDCARD`, and `DOMAIN-REGEX` entries.
 - **Priority**: First match wins across all rule kinds, not just within exact/suffix rules.
 - **Rule-Based DNL Matching**: Domain-name-list matching is a first-class routing feature. You can bind multiple Clash/Mihomo-style DNL files to different upstream tags, including custom groups, instead of relying on only one direct list and one proxy list.
-- **Hot Reload**: DNL files referenced by `upstreams.rules` are watched at runtime. When one of those files changes, `chinadns-rs` rebuilds and hot-swaps the DNL cache without restarting the daemon; if the rebuild fails, the previous working cache stays active and the watcher retries later.
+- **Hot Reload**: DNL files referenced by `upstreams.rules` are watched at runtime. When one of those files changes, `polardns` rebuilds and hot-swaps the DNL cache without restarting the daemon; if the rebuild fails, the previous working cache stays active and the watcher retries later.
 - **Note**: The legacy `none` tag and verdict-based routing have been discarded for better predictability.
 
 `--upstream-rule` can be specified multiple times and accepts either a path to a control file (backward compatibility mode) or inline rule mapping directly.
@@ -58,43 +58,43 @@ When mapping inline rules directly or writing them in the control file, each rul
 
 ```text
 # Recommended separator
-/etc/chinadns-rs/rules/direct-provider.yaml@direct
-/etc/chinadns-rs/rules/proxy-classical.rules@proxy
-/etc/chinadns-rs/rules/adblock-provider.yaml@adblock
+/etc/polardns/rules/direct-provider.yaml@direct
+/etc/polardns/rules/proxy-classical.rules@proxy
+/etc/polardns/rules/adblock-provider.yaml@adblock
 
 # Comma is also accepted for compatibility
-/etc/chinadns-rs/rules/private-cdn.list,cdn
+/etc/polardns/rules/private-cdn.list,cdn
 ```
 
 When specifying rules directly or via a control file, paths are read exactly as written. Use absolute paths in service or Docker configs, or configure a `workspace` directory.
 
 #### Workspace Path Resolution
-If a `workspace` is configured (via the config file, `CHINADNS_WORKSPACE` environment variable, or the `-w` / `--workspace` CLI flag), all relative paths (including rule files, certificates, and databases) will automatically resolve relative to this directory. Relative DNL file paths referenced inside an `upstreams.rules` control file will also dynamically resolve against the workspace base directory.
+If a `workspace` is configured (via the config file, `POLARDNS_WORKSPACE` environment variable, or the `-w` / `--workspace` CLI flag), all relative paths (including rule files, certificates, and databases) will automatically resolve relative to this directory. Relative DNL file paths referenced inside an `upstreams.rules` control file will also dynamically resolve against the workspace base directory.
 
 #### Method 1: Using Inline Rules in Command Line or Config File (Recommended)
 You can define rules directly without an intermediate `upstreams.rules` file:
 
 ```bash
-chinadns-rs \
+polardns \
     --direct-dns 223.5.5.5 \
     --proxy-dns https://1.1.1.1/dns-query \
     --group cdn \
     --group-upstream cdn:https://dns-cdn.example/dns-query \
-    --upstream-rule /etc/chinadns-rs/rules/direct-provider.yaml@direct \
-    --upstream-rule /etc/chinadns-rs/rules/proxy-classical.rules@proxy \
-    --upstream-rule /etc/chinadns-rs/rules/private-cdn.list,cdn
+    --upstream-rule /etc/polardns/rules/direct-provider.yaml@direct \
+    --upstream-rule /etc/polardns/rules/proxy-classical.rules@proxy \
+    --upstream-rule /etc/polardns/rules/private-cdn.list,cdn
 ```
 
 Or inside the TOML configuration file (`config.toml`):
 ```toml
 [[rules]]
 type = "upstream"
-path = "/etc/chinadns-rs/rules/direct-provider.yaml"
+path = "/etc/polardns/rules/direct-provider.yaml"
 tag = "direct"
 
 [[rules]]
 type = "upstream"
-path = "/etc/chinadns-rs/rules/proxy-classical.rules"
+path = "/etc/polardns/rules/proxy-classical.rules"
 tag = "proxy"
 
 [[rules]]
@@ -119,22 +119,22 @@ You can automatically fetch rules from a remote HTTP/HTTPS URL on startup and ke
 ```toml
 [[rules]]
 type = "upstream"
-path = "rules/gfw-remote.txt"      # Local path to store the fetched rules
+path = "rules/remote-rules.txt"    # Local path to store the fetched rules
 url = "https://example.com/rules"  # URL to fetch from
 refresh = 86400                    # Background refresh interval in seconds (default: 86400 / 24h)
 tag = "proxy"
 ```
 
 #### Method 2: Pointing to a Separate Rule File (Legacy/Compatible Mode)
-You can still point `--upstream-rule` to a separate file (e.g. `/etc/chinadns-rs/upstreams.rules`) containing the rules:
+You can still point `--upstream-rule` to a separate file (e.g. `/etc/polardns/upstreams.rules`) containing the rules:
 
 ```bash
-chinadns-rs \
+polardns \
     --direct-dns 223.5.5.5 \
     --proxy-dns https://1.1.1.1/dns-query \
     --group cdn \
     --group-upstream cdn:https://dns-cdn.example/dns-query \
-    --upstream-rule /etc/chinadns-rs/upstreams.rules
+    --upstream-rule /etc/polardns/upstreams.rules
 ```
 
 #### Upstream Server URL Schemes
@@ -188,19 +188,19 @@ Classical lines may include a trailing target token such as `,DIRECT` or `,PROXY
 DOMAIN-SUFFIX,example.net,PROXY
 ```
 
-That trailing token is ignored by `chinadns-rs`; routing comes from the tag assigned to the whole file in `upstreams.rules`. This keeps rule priority deterministic across files and rule kinds.
+That trailing token is ignored by `polardns`; routing comes from the tag assigned to the whole file in `upstreams.rules`. This keeps rule priority deterministic across files and rule kinds.
 
-The domain-list files referenced by `upstreams.rules` are hot-reloaded. This is useful when a Mihomo provider file, generated domain list, or adblock list is updated by another process: `chinadns-rs` detects the changed file, rebuilds the matcher, and swaps the new DNL cache into service without dropping listeners. Changing the `upstreams.rules` control file itself still requires restarting or reloading the process so the file-to-tag mapping is read again.
+The domain-list files referenced by `upstreams.rules` are hot-reloaded. This is useful when a Mihomo provider file, generated domain list, or adblock list is updated by another process: `polardns` detects the changed file, rebuilds the matcher, and swaps the new DNL cache into service without dropping listeners. Changing the `upstreams.rules` control file itself still requires restarting or reloading the process so the file-to-tag mapping is read again.
 
 ### 3. Simultaneous vs Sequential Upstream Querying
 - **Sequential (RTT-Sorted Fallback)**: Leverages a high-performance **RTT (Round-Trip Time) State Tracker** to prioritize queries. 
   * **Active Probing**: A background task probes all configured upstreams every 15 seconds using a lightweight `.` (root) NS query. This query is answered directly from the upstream resolver's memory (root hints), measuring pure network + protocol transit times fairly without recursive domain lookup bias.
   * **RTT-Sorted Fallback**: The fallback list is stably sorted by tracked RTT (with randomized tie-breaking for equal latencies), ensuring queries are always routed to the fastest available upstream first.
   * **Fast Fail-Over**: If an upstream fails (connection refused, pool saturated, or timeout), a $+1000\text{ ms}$ penalty (up to a max of $5000\text{ ms}$) is immediately applied to its tracked RTT. This instantly deprioritizes the failing server for subsequent client queries without waiting for the next background probe.
-- **Simultaneous (`--proxy-dns-all`, `--direct-dns-all`, `--group-upstream-all`)**: Blasts the query to *all* configured servers in a group at once, accepting the fastest valid response. (Supported legacy aliases: `--trust-dns-all`, `--china-dns-all`). Pending queries to other upstreams are canceled immediately upon receiving a response.
+- **Simultaneous (`--proxy-dns-all`, `--direct-dns-all`, `--group-upstream-all`)**: Blasts the query to *all* configured servers in a group at once, accepting the fastest valid response. (Supported aliases: `--trust-dns-all`, `--polar-dns-all`). Pending queries to other upstreams are canceled immediately upon receiving a response.
 
 ### 4. Protocol-Aware Multi-Set Management
-Resolved IPs can be automatically injected into Linux kernel firewall sets (ipset and nftables) for dynamic routing. `chinadns-rs` features a protocol-aware routing engine that automatically maps IPv4/IPv6 results to the correct destination sets.
+Resolved IPs can be automatically injected into Linux kernel firewall sets (ipset and nftables) for dynamic routing. `polardns` features a protocol-aware routing engine that automatically maps IPv4/IPv6 results to the correct destination sets.
 
 *   **Mixed Protocol Support**: Mix `ipset` and `nftables` sets for a single tag.
 *   **Automatic Family Detection**: Only routes IPv4 addresses to IPv4 sets and IPv6 to IPv6 sets (dual-stack sets receive both).
@@ -209,7 +209,7 @@ Resolved IPs can be automatically injected into Linux kernel firewall sets (ipse
 **Config Examples:**
 ```bash
 # Mix ipset and nftables for the 'direct' tag
-chinadns-rs --direct-sets direct_v4,direct_v6,nft:inet:fw4:bypass_set
+polardns --direct-sets direct_v4,direct_v6,nft:inet:fw4:bypass_set
 ```
 
 **Supported Formats:**
@@ -219,7 +219,7 @@ chinadns-rs --direct-sets direct_v4,direct_v6,nft:inet:fw4:bypass_set
 
 ## 🛠️ Build from Source
 
-`chinadns-rs` provides **two distinct, mutually exclusive cryptographic, QUIC, and HTTP/3 engine implementations**:
+`polardns` provides **two distinct, mutually exclusive cryptographic, QUIC, and HTTP/3 engine implementations**:
 1. **Original Engine (`original` / `rustls-stack`)** [Default]: A 100% Native Pure-Rust stack powered by `rustls`, `ring`, `quinn`, `h3`, and `reqwest`. Zero C dependencies and zero CMake/compiler toolchain requirements.
 2. **Quiche Engine (`quiche`)**: An enterprise-grade, high-performance engine powered by Cloudflare's `quiche` (RFC 9000 QUIC, RFC 9114 HTTP/3, and RFC 9250 DoQ), Google `BoringSSL` (`boring` / `tokio-boring`), and native `Hyper 1.x`. Engineered for ultra-low memory footprints (~14 MB RSS on embedded routers) with complete decoupling from Rustls/Ring.
 
@@ -246,7 +246,7 @@ chinadns-rs --direct-sets direct_v4,direct_v6,nft:inet:fw4:bypass_set
 ### 📦 Install Build Dependencies
 
 #### 1. Rust Toolchain (Required for Both Engines)
-`chinadns-rs` requires a modern stable Rust toolchain supporting **Rust Edition 2024** (Rust 1.85+).
+`polardns` requires a modern stable Rust toolchain supporting **Rust Edition 2024** (Rust 1.85+).
 
 For official installation instructions and platform-specific guides, see:
 - [Official Rust Installation Guide](https://www.rust-lang.org/tools/install)
@@ -332,7 +332,7 @@ cargo build --release --no-default-features --features original-h3-server,tls12
 
 The output binary is written to:
 ```text
-target/release/chinadns-rs
+target/release/polardns
 ```
 
 ---
@@ -357,7 +357,7 @@ cargo build --release --no-default-features --features quiche,tls12
 
 The output binary is written to:
 ```text
-target/release/chinadns-rs
+target/release/polardns
 ```
 
 ---
@@ -398,12 +398,12 @@ Fully static binaries (ideal for OpenWrt and Alpine) can be built using `cargo-z
 
 Cross-build artifacts are written to:
 ```text
-target/<target-triple>/release/chinadns-rs
+target/<target-triple>/release/polardns
 ```
 
 ## ⚙️ Configuration & Usage
 
-`chinadns-rs` supports multiple bind addresses, interfaces, ports, Unix Domain Sockets (UDS), and specific listener endpoints. You can specify them multiple times in the CLI or configuration file.
+`polardns` supports multiple bind addresses, interfaces, ports, Unix Domain Sockets (UDS), and specific listener endpoints. You can specify them multiple times in the CLI or configuration file.
 
 - **IP Addresses**: Bind to IPv4/IPv6 addresses (e.g. `-b 127.0.0.1 -b ::1`). They will be bound to all ports defined in `--bind-port`.
 - **Unix Domain Sockets (UDS)**: Bind to Unix sockets using `unix:/path/to/socket` (for stream/TCP-like queries) or `unixgram:/path/to/socket` (for datagram/UDP-like queries). Sockets bypass ports and will automatically delete/unlink any stale socket file on startup.
@@ -411,17 +411,17 @@ target/<target-triple>/release/chinadns-rs
 
 ```bash
 # Listen on both standard loopback and a Unix Domain Socket
-chinadns-rs -b 127.0.0.1 -b unix:/tmp/dns.sock -l 1054 \
+polardns -b 127.0.0.1 -b unix:/tmp/dns.sock -l 1054 \
     -c 114.114.114.114 \
     -t https://1.1.1.1/dns-query \
-    --upstream-rule /etc/chinadns-rs/upstreams.rules
+    --upstream-rule /etc/polardns/upstreams.rules
 ```
 
 ### DNS over TLS (DoT) & DNS over HTTPS (DoH) Listeners
-`chinadns-rs` can serve local clients as a DNS over TLS and DNS over HTTPS server. DoH serves HTTP/1.1 and HTTP/2 by default; HTTP/3 (QUIC) is available as an explicit opt-in. This local encrypted listener is independent from upstream transport selection, so clients can query `chinadns-rs` over UDP/TCP/DoT/DoH while `chinadns-rs` routes each request to direct, proxy, adblock, or custom upstream groups.
+`polardns` can serve local clients as a DNS over TLS and DNS over HTTPS server. DoH serves HTTP/1.1 and HTTP/2 by default; HTTP/3 (QUIC) is available as an explicit opt-in. This local encrypted listener is independent from upstream transport selection, so clients can query `polardns` over UDP/TCP/DoT/DoH while `polardns` routes each request to direct, proxy, adblock, or custom upstream groups.
 
 ```bash
-chinadns-rs \
+polardns \
     --enable-dot --dot-port 853 \
     --enable-doh --doh-port 443 --doh-path /dns-query \
     --cert-file /path/to/server.crt \
@@ -431,13 +431,13 @@ chinadns-rs \
 - **Multiple Ports**: `--dot-port` and `--doh-port` can be specified multiple times, aligning with standard listener port logic.
 - **Multiple Listener Certificates**: Keep `--cert-file` and `--key-file` as the default certificate, and add repeatable `--cert-pair` entries for SNI-based selection. Inside one pair, use `cert.pem,key.pem`; use a combined PEM path when the file contains both the certificate chain and private key. To put multiple pairs in one value, quote the value and separate pairs with `;`.
 ```bash
-chinadns-rs \
+polardns \
     --enable-dot --enable-doh \
-    --cert-file /etc/chinadns-rs/default.crt \
-    --key-file /etc/chinadns-rs/default.key \
-    --cert-pair /etc/chinadns-rs/dns-example.crt,/etc/chinadns-rs/dns-example.key \
-    --cert-pair /etc/chinadns-rs/combined-anycast.pem \
-    --cert-pair '/etc/chinadns-rs/alt.crt,/etc/chinadns-rs/alt.key;/etc/chinadns-rs/combined-alt.pem'
+    --cert-file /etc/polardns/default.crt \
+    --key-file /etc/polardns/default.key \
+    --cert-pair /etc/polardns/dns-example.crt,/etc/polardns/dns-example.key \
+    --cert-pair /etc/polardns/combined-anycast.pem \
+    --cert-pair '/etc/polardns/alt.crt,/etc/polardns/alt.key;/etc/polardns/combined-alt.pem'
 ```
   Certificate DNS SANs are extracted automatically, with CN used only as a fallback when no DNS SAN is present. Exact SANs and single-label wildcards such as `*.example.com` are used for SNI matching. If the client sends no matching SNI, the default `--cert-file/--key-file` certificate is used; if no default pair is configured, the first `--cert-pair` entry is used as the fallback.
 - **Strict SNI**: Add `--strict-sni` to reject local TLS handshakes that do not send a DNS SNI name matching any configured certificate SAN/CN. This is useful for public multi-domain listeners, but IP-only clients that cannot send SNI will fail.
@@ -445,15 +445,15 @@ chinadns-rs \
 - **SSL Certificate Verification**: By default, SSL certificate verification for encrypted upstreams (DoT/DoH/DoH3) is disabled, meaning self-signed or unverified certificates are accepted (useful for private/testing upstreams). To enable validation, pass `--cert-verify`.
 - **Custom Upstream Authorities**: When `--cert-verify` is enabled, the daemon validates certificates against the system's root certificates. To validate against a specific root CA bundle globally, add `--ca-certs /path/to/ca.pem`. To bind a different CA to only one encrypted upstream, append `|ca=/path/to/ca.pem` to that upstream. `h3://` upstreams require a binary built with `--features quiche` or `RUSTFLAGS="--cfg reqwest_unstable" --features upstream-h3`:
 ```bash
-chinadns-rs \
+polardns \
     --cert-verify \
-    --proxy-dns 'tls://dns1.example.com:853|ca=/etc/chinadns-rs/ca-dns1.pem,https://dns2.example.com/dns-query|ca=/etc/chinadns-rs/ca-dns2.pem,h3://dns3.example.com/dns-query|ca=/etc/chinadns-rs/ca-dns3.pem'
+    --proxy-dns 'tls://dns1.example.com:853|ca=/etc/polardns/ca-dns1.pem,https://dns2.example.com/dns-query|ca=/etc/polardns/ca-dns2.pem,h3://dns3.example.com/dns-query|ca=/etc/polardns/ca-dns3.pem'
 ```
   Per-upstream `ca=` is supported on `tls://`, `https://`, and `h3://` upstreams. It implies strict verification for that upstream and uses only the specified CA bundle. Quote CLI values containing `|` so the shell does not treat it as a pipe.
 - **Bind Port Aliases**: The standard listener port flag `--bind-port` now supports `--dns-port` as a more descriptive alias.
 
 ### HTTP/3 Memory Profiles & Low-Memory Tuning
-When compiled with feature `quiche`, `chinadns-rs` includes a high-performance HTTP/3 engine with zero-allocation packet recycling pools and automatic memory scaling via `--h3-profile`:
+When compiled with feature `quiche`, `polardns` includes a high-performance HTTP/3 engine with zero-allocation packet recycling pools and automatic memory scaling via `--h3-profile`:
 
 | Profile | CLI Flag / Config Option | Target Environment | Flow Window (Conn / Stream) | Target Total RSS |
 | :--- | :--- | :--- | :--- | :--- |
@@ -463,25 +463,25 @@ When compiled with feature `quiche`, `chinadns-rs` includes a high-performance H
 
 ```bash
 # OpenWrt low-memory mode example (<2MB RSS total memory)
-chinadns-rs --h3-low-memory --proxy-dns h3://1.1.1.1/dns-query ...
+polardns --h3-low-memory --proxy-dns h3://1.1.1.1/dns-query ...
 ```
 - **Bootstrap Resolver**: `--fallback-dns` is used only to resolve hostnames inside DoT/DoH upstream URLs. Keep it non-recursive: use an IP literal, `udp://IP`, or `tcp://IP`, not another hostname-based DoT/DoH resolver.
 
 ### TOML / YAML Configuration (Default & Recommended)
-`chinadns-rs` uses TOML as its primary and default configuration format (YAML is also natively supported). The format is auto-detected based on the file extension (`.toml`, `.yaml`, `.yml`).
+`polardns` uses TOML as its primary and default configuration format (YAML is also natively supported). The format is auto-detected based on the file extension (`.toml`, `.yaml`, `.yml`).
 
 To run with a TOML/YAML config:
 ```bash
-chinadns-rs -C /etc/chinadns-rs/config.toml
-chinadns-rs --config /etc/chinadns-rs/config.yaml
+polardns -C /etc/polardns/config.toml
+polardns --config /etc/polardns/config.yaml
 ```
 
-A comprehensive, deployment-oriented reference configuration is available at [`examples/config.toml`](examples/config.toml) (YAML equivalent at [`examples/config.yaml`](examples/config.yaml)). A matching non-root systemd service sample is available at [`examples/chinadns-rs.service`](examples/chinadns-rs.service).
+A comprehensive, deployment-oriented reference configuration is available at [`examples/config.toml`](examples/config.toml) (YAML equivalent at [`examples/config.yaml`](examples/config.yaml)). A matching non-root systemd service sample is available at [`examples/polardns.service`](examples/polardns.service).
 
 ### Legacy Configuration Format (Deprecated)
 The legacy line-based `.conf` configuration files continue to be supported as a fallback:
 
-**Config file example (`/etc/chinadns-rs/config.conf`):**
+**Config file example (`/etc/polardns/config.conf`):**
 ```conf
 # Standard format
 bind-addr 0.0.0.0
@@ -497,27 +497,27 @@ bind-port 1054,65353
 udp-only
 ```
 
-Legacy config sample is available at [`examples/config.conf`](examples/config.conf). The systemd service assumes the binary is installed at `/usr/local/bin/chinadns-rs`; adjust `ExecStart=` if your install path differs. It grants `CAP_NET_BIND_SERVICE` for low ports, `CAP_NET_ADMIN` for ipset/nft set sync, and `CAP_NET_RAW` for device interface binding (`SO_BINDTODEVICE`); remove `CAP_NET_ADMIN` or `CAP_NET_RAW` if not using these features.
+Legacy config sample is available at [`examples/config.conf`](examples/config.conf). The systemd service assumes the binary is installed at `/usr/local/bin/polardns`; adjust `ExecStart=` if your install path differs. It grants `CAP_NET_BIND_SERVICE` for low ports, `CAP_NET_ADMIN` for ipset/nft set sync, and `CAP_NET_RAW` for device interface binding (`SO_BINDTODEVICE`); remove `CAP_NET_ADMIN` or `CAP_NET_RAW` if not using these features.
 
 If you run the binary directly under a non-privileged user without systemd, you can grant the necessary capabilities to the binary using `setcap`:
 
 ```bash
-sudo setcap 'cap_net_bind_service,cap_net_admin=+ep' /usr/local/bin/chinadns-rs
+sudo setcap 'cap_net_bind_service,cap_net_admin=+ep' /usr/local/bin/polardns
 ```
 
 Typical service deployment layout:
 
 ```bash
-install -Dm755 target/release/chinadns-rs /usr/local/bin/chinadns-rs
+install -Dm755 target/release/polardns /usr/local/bin/polardns
 # Optional: set capabilities directly on the binary if not running via systemd service
-sudo setcap 'cap_net_bind_service,cap_net_admin=+ep' /usr/local/bin/chinadns-rs
+sudo setcap 'cap_net_bind_service,cap_net_admin=+ep' /usr/local/bin/polardns
 
-install -Dm644 examples/config.toml /etc/chinadns-rs/config.toml
-install -Dm644 examples/upstreams.rules /etc/chinadns-rs/upstreams.rules
-install -Dm644 examples/chinadns-rs.service /etc/systemd/system/chinadns-rs.service
+install -Dm644 examples/config.toml /etc/polardns/config.toml
+install -Dm644 examples/upstreams.rules /etc/polardns/upstreams.rules
+install -Dm644 examples/polardns.service /etc/systemd/system/polardns.service
 ```
 
-When copying `examples/upstreams.rules` into `/etc/chinadns-rs`, update its DNL file paths to point at your real rule files, preferably with absolute paths.
+When copying `examples/upstreams.rules` into `/etc/polardns`, update its DNL file paths to point at your real rule files, preferably with absolute paths.
 
 ### Notable Features
 - **Efficient DNL Matching**: Uses hash indexes for exact domains, a compact reversed-label trie for suffix rules, and linear byte glob matching for Mihomo wildcards. Explicit `DOMAIN-REGEX` remains regex-backed.
@@ -532,7 +532,7 @@ When copying `examples/upstreams.rules` into `/etc/chinadns-rs`, update its DNL 
 - **Compact Memory**: Keeps common exact and `+.` suffix rules in compact indexes, uses inline storage for single-rule buckets, and avoids regex expansion for wildcard rules.
 - **Granular DNS Caching**: `--cache`, `--cache-min-ttl`, `--cache-max-ttl`, `--cache-cleanup-interval`, and persistence via `--cache-db`. Features adaptive memory management (Smart Shrink) to release RAM back to the OS during periods of low usage.
 - **UDP Memory Control**: `--socket-buffer-size` controls per-socket UDP send/receive buffers. The default is 1 MiB; set it higher for very high packet-rate deployments or `0` to leave OS defaults.
-- **Linux Routing**: Directly syncs DNS resolutions to `ipset`/`nftables` via `--direct-sets` and `--proxy-sets` (with legacy aliases `--chn-sets` and `--gfw-sets`).
+- **Linux Routing**: Directly syncs DNS resolutions to `ipset`/`nftables` via `--direct-sets` and `--proxy-sets` (with aliases `--polar-sets`, `--chn-sets`, and `--gfw-sets`).
 - **Local Overrides**: Support for multiple IPs per domain in hosts and CLI records.
 - **TLS Security**: Full DoT/DoH support with optional strict cert validation (`--cert-verify`).
 - **Slowloris & Rate Limit Protection**: Defends against slow-client attacks using socket read timeout limits (`--tcp-idle-timeout-ms`, default 10s), queue permit wait timeout (`--queue-timeout-ms`, default 2000ms), and global query queueing limits (`--max-concurrent-queries`, default 1000).
@@ -540,11 +540,11 @@ When copying `examples/upstreams.rules` into `/etc/chinadns-rs`, update its DNL 
 - **Upstream Resilience**: Integrates per-upstream connection limits (`--max-upstream-conns`, default 16) with a fail-fast design that bypasses saturated servers immediately, using socket TCP Keepalive probes (60s idle, 10s interval) to prune dead upstream connections dynamically. Features an active-probing **RTT State Tracker** to dynamically prioritize and route traffic to the lowest-latency upstreams.
 - **Match Tracing**: Supports high-performance asynchronous tracing via `--log-dns-match <log file>`. Matches are logged asynchronously (e.g. `domain,tag_name`) to a buffered background writer to avoid blocking the hot query resolution path.
 
-*(You can run `chinadns-rs --help` to see all options parsed and validated natively.)*
+*(You can run `polardns --help` to see all options parsed and validated natively.)*
 
 ## 🔀 Policy Routing & Socket Marking (SO_MARK)
 
-`chinadns-rs` supports setting socket marks (`SO_MARK`) on outgoing sockets to enable policy-based routing on Linux:
+`polardns` supports setting socket marks (`SO_MARK`) on outgoing sockets to enable policy-based routing on Linux:
 
 - **Global Mark**: Use `--out-mark <mark>` (or `out-mark <mark>` in the config) to apply a socket mark to all outgoing UDP, TCP, and DoT queries.
 - **Per-Upstream Mark**: Append `|mark=<mark>` directly to upstream server definitions to route queries for specific servers differently (e.g. `direct-dns 223.5.5.5|mark=100`, `proxy-dns tls://1.1.1.1:853|mark=200`).
@@ -556,15 +556,15 @@ When copying `examples/upstreams.rules` into `/etc/chinadns-rs`, update its DNL 
 
 Because the internal HTTP client library (`reqwest`) in the Original engine handles socket creation and connection pooling at a high abstraction level, programmatic socket marking (`|mark=val`) cannot be applied to DoH (`https://`) and DoH3 (`h3://`) upstreams.
 
-To mark and route all outbound DoH/DoH3 queries, you can run `chinadns-rs` inside a dedicated Linux **cgroup** and use `nftables`/`iptables` to apply marks on all packets originating from that cgroup.
+To mark and route all outbound DoH/DoH3 queries, you can run `polardns` inside a dedicated Linux **cgroup** and use `nftables`/`iptables` to apply marks on all packets originating from that cgroup.
 
 **Example using nftables:**
 ```bash
-# 1. Start the service inside the 'chinadns' cgroup
-systemd-run --slice=chinadns.slice ./target/debug/chinadns-rs ...
+# 1. Start the service inside the 'polardns' cgroup
+systemd-run --slice=polardns.slice ./target/debug/polardns ...
 
 # 2. Add an nftables rule to mark all packets from that cgroup
-nft add rule ip filter output socket cgroup "chinadns" meta mark set 100
+nft add rule ip filter output socket cgroup "polardns" meta mark set 100
 ```
 
 ## ⚖️ License

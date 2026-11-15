@@ -172,12 +172,12 @@ pub struct Opt {
     #[arg(long = "udp-only")]
     pub udp_only: bool,
 
-    /// domestic DNS servers (e.g. 114.114.114.114, 223.5.5.5) [alias: --china-dns]
-    #[arg(short = 'c', long = "direct-dns", alias = "china-dns")]
+    /// Direct DNS servers (e.g. 114.114.114.114, 223.5.5.5) [alias: --polar-dns]
+    #[arg(short = 'c', long = "direct-dns", alias = "polar-dns")]
     pub direct_dns: Option<String>,
 
-    /// Send queries to all configured direct-dns servers simultaneously [alias: --china-dns-all]
-    #[arg(long = "direct-dns-all", alias = "china-dns-all")]
+    /// Send queries to all configured direct-dns servers simultaneously [alias: --polar-dns-all]
+    #[arg(long = "direct-dns-all", alias = "polar-dns-all")]
     pub direct_dns_all: bool,
 
     /// Trusted Upstream DNS (e.g. 8.8.8.8, tls://1.1.1.1, https://1.1.1.1/dns-query) [alias: --trust-dns]
@@ -200,16 +200,16 @@ pub struct Opt {
     #[arg(short = 'B', long = "adblock")]
     pub adblock_file: Vec<String>,
 
-    /// [DEPRECATED] CHN Domain list file(s)
-    #[arg(short = 'm', long = "chnlist-file")]
+    /// [DEPRECATED] Direct Domain list file(s) [alias: --polarlist-file, --chnlist-file]
+    #[arg(short = 'm', long = "directlist-file", alias = "polarlist-file", alias = "chnlist-file")]
     pub chnlist_file: Vec<String>,
 
     /// [DEPRECATED] GFW Domain list file(s)
     #[arg(short = 'g', long = "gfwlist-file")]
     pub gfwlist_file: Vec<String>,
 
-    /// [DEPRECATED] Match chnlist before gfwlist
-    #[arg(short = 'M', long = "chnlist-first")]
+    /// [DEPRECATED] Match directlist before gfwlist [alias: --polarlist-first, --chnlist-first]
+    #[arg(short = 'M', long = "directlist-first", alias = "polarlist-first", alias = "chnlist-first")]
     pub chnlist_first: bool,
 
     /// Default tag for unmatched domains (e.g. direct, proxy)
@@ -217,15 +217,15 @@ pub struct Opt {
     pub default_tag: String,
 
     /// [DEPRECATED] Add the ip of name-tag:direct to ipset/nftset (set4,set6). Use --direct-sets instead.
-    #[arg(long = "add-tagchn-ip", value_name = "set4,set6")]
+    #[arg(long = "add-tagdirect-ip", alias = "add-tagpolar-ip", alias = "add-tagchn-ip", value_name = "set4,set6")]
     pub add_tagchn_ip: Option<String>,
 
     /// [DEPRECATED] Add the ip of name-tag:proxy to ipset/nftset (set4,set6). Use --proxy-sets instead.
     #[arg(short = 'A', long = "add-taggfw-ip", value_name = "set4,set6")]
     pub add_taggfw_ip: Option<String>,
 
-    /// Add the ip of name-tag:direct to ipset/nftset (comma-separated list of sets) [alias: --chn-sets]
-    #[arg(long = "direct-sets", alias = "chn-sets", value_delimiter = ',')]
+    /// Add the ip of name-tag:direct to ipset/nftset (comma-separated list of sets) [alias: --polar-sets, --chn-sets]
+    #[arg(long = "direct-sets", alias = "polar-sets", alias = "chn-sets", value_delimiter = ',')]
     pub direct_sets: Vec<String>,
 
     /// Add the ip of name-tag:proxy to ipset/nftset (comma-separated list of sets) [alias: --gfw-sets]
@@ -268,7 +268,7 @@ pub struct Opt {
     #[arg(long = "group-upstream-all")]
     pub group_upstream_all: bool,
 
-    /// Filter IPv6 rules (e.g. tag:name, ip:china...)
+    /// Filter IPv6 rules (e.g. tag:name, direct...)
     #[arg(short = 'N', long = "no-ipv6")]
     pub no_ipv6: Option<String>,
 
@@ -415,8 +415,8 @@ pub struct Opt {
     #[arg(long = "repeat-times", default_value_t = 1)]
     pub repeat_times: u8,
 
-    /// Allow no-ip reply from chinadns (tag:none)
-    #[arg(short = 'n', long = "noip-as-chnip")]
+    /// Allow no-ip reply from polardns (tag:none)
+    #[arg(short = 'n', long = "noip-as-directip", alias = "noip-as-polarip", alias = "noip-as-chnip")]
     pub noip_as_chnip: bool,
 
     /// Legacy option, deprecated (only fair mode now)
@@ -548,7 +548,7 @@ impl Opt {
                 workspace_cli = Some(cli_args[i][2..].to_string());
             }
         }
-        let workspace_env = std::env::var("CHINADNS_WORKSPACE").ok();
+        let workspace_env = std::env::var("POLARDNS_WORKSPACE").ok();
         let workspace_opt = workspace_cli.clone().or(workspace_env.clone());
 
         let mut final_args = vec![cli_args[0].clone()];
@@ -743,13 +743,13 @@ impl Opt {
                             "--tls-bind-addr" => arg == "--tls-bind-addr",
                             "--no-ipv6-link-local" => arg == "--no-ipv6-link-local",
                             "--no-tls-ipv6-link-local" => arg == "--no-tls-ipv6-link-local",
-                            "--china-dns" | "--direct-dns" => {
+                            "--polar-dns" | "--direct-dns" => {
                                 matches_short_flag(arg, 'c', true)
-                                    || arg == "--china-dns"
+                                    || arg == "--polar-dns"
                                     || arg == "--direct-dns"
                             }
-                            "--china-dns-all" | "--direct-dns-all" => {
-                                arg == "--china-dns-all" || arg == "--direct-dns-all"
+                            "--polar-dns-all" | "--direct-dns-all" => {
+                                arg == "--polar-dns-all" || arg == "--direct-dns-all"
                             }
                             "--trust-dns" | "--proxy-dns" => {
                                 matches_short_flag(arg, 't', true)
@@ -764,14 +764,26 @@ impl Opt {
                             "--upstream-rule" => arg == "--upstream-rule",
                             "--log-dns-match" => arg == "--log-dns-match",
                             "--group-upstream-all" => arg == "--group-upstream-all",
-                            "--chnlist-file" => {
-                                matches_short_flag(arg, 'm', true) || arg == "--chnlist-file"
+                            "--directlist-file" | "--polarlist-file" | "--chnlist-file" => {
+                                matches_short_flag(arg, 'm', true)
+                                    || arg == "--directlist-file"
+                                    || arg == "--polarlist-file"
+                                    || arg == "--chnlist-file"
                             }
                             "--gfwlist-file" => {
                                 matches_short_flag(arg, 'g', true) || arg == "--gfwlist-file"
                             }
-                            "--add-tagchn-ip" => {
-                                arg == "--add-tagchn-ip"
+                            "--directlist-first" | "--polarlist-first" | "--chnlist-first" => {
+                                matches_short_flag(arg, 'M', false)
+                                    || arg == "--directlist-first"
+                                    || arg == "--polarlist-first"
+                                    || arg == "--chnlist-first"
+                            }
+                            "--add-tagdirect-ip" | "--add-tagpolar-ip" | "--add-tagchn-ip" => {
+                                arg == "--add-tagdirect-ip"
+                                    || arg == "--add-tagpolar-ip"
+                                    || arg == "--add-tagchn-ip"
+                                    || arg == "--polar-sets"
                                     || arg == "--chn-sets"
                                     || arg == "--direct-sets"
                             }
@@ -781,9 +793,12 @@ impl Opt {
                                     || arg == "--gfw-sets"
                                     || arg == "--proxy-sets"
                             }
-                            "--chn-sets" | "--direct-sets" => {
-                                arg == "--chn-sets"
+                            "--polar-sets" | "--chn-sets" | "--direct-sets" => {
+                                arg == "--polar-sets"
+                                    || arg == "--chn-sets"
                                     || arg == "--direct-sets"
+                                    || arg == "--add-tagdirect-ip"
+                                    || arg == "--add-tagpolar-ip"
                                     || arg == "--add-tagchn-ip"
                             }
                             "--gfw-sets" | "--proxy-sets" => {
@@ -807,7 +822,12 @@ impl Opt {
                             "--max-background-refreshes" => arg == "--max-background-refreshes",
                             "--max-upstream-conns" => arg == "--max-upstream-conns",
                             "--repeat-times" => arg == "--repeat-times",
-                            "--noip-as-chnip" => matches_short_flag(arg, 'n', false),
+                            "--noip-as-directip" | "--noip-as-polarip" | "--noip-as-chnip" => {
+                                matches_short_flag(arg, 'n', false)
+                                    || arg == "--noip-as-directip"
+                                    || arg == "--noip-as-polarip"
+                                    || arg == "--noip-as-chnip"
+                            },
                             "--fair-mode" => matches_short_flag(arg, 'f', false),
                             "--reuse-port" => matches_short_flag(arg, 'r', false),
                             "--socket-buffer-size" => arg == "--socket-buffer-size",
@@ -839,7 +859,7 @@ impl Opt {
             std::process::exit(1);
         }
 
-        if opt.default_tag == "chn" {
+        if opt.default_tag == "chn" || opt.default_tag == "polar" {
             opt.default_tag = "direct".to_string();
         } else if opt.default_tag == "gfw" {
             opt.default_tag = "proxy".to_string();
@@ -919,6 +939,7 @@ impl Opt {
                 if let Some(groups) = upstreams.groups {
                     for (name, group) in groups {
                         if name == "chn"
+                            || name == "polar"
                             || name == "gfw"
                             || name == "direct"
                             || name == "proxy"
@@ -1044,34 +1065,34 @@ mod tests {
 
     #[test]
     fn test_dnsmasq_style_listen_flags() {
-        let opt1 = Opt::parse_from(["chinadns-rs", "-a", "10.0.0.1", "--listen-address", "10.0.0.2", "--bind-address", "10.0.0.3"]);
+        let opt1 = Opt::parse_from(["polardns", "-a", "10.0.0.1", "--listen-address", "10.0.0.2", "--bind-address", "10.0.0.3"]);
         assert_eq!(opt1.bind_addr, vec!["10.0.0.1".to_string(), "10.0.0.2".to_string(), "10.0.0.3".to_string()]);
 
-        let opt2 = Opt::parse_from(["chinadns-rs", "-p", "1053", "--port", "1054", "--dns-port", "1055"]);
+        let opt2 = Opt::parse_from(["polardns", "-p", "1053", "--port", "1054", "--dns-port", "1055"]);
         assert_eq!(opt2.bind_port, vec![1053, 1054, 1055]);
 
-        let opt3 = Opt::parse_from(["chinadns-rs", "--tls-port", "8853"]);
+        let opt3 = Opt::parse_from(["polardns", "--tls-port", "8853"]);
         assert_eq!(opt3.dot_port, vec![8853]);
 
-        let opt4 = Opt::parse_from(["chinadns-rs", "-I", "eth0", "--except-interface", "wlan*"]);
+        let opt4 = Opt::parse_from(["polardns", "-I", "eth0", "--except-interface", "wlan*"]);
         assert_eq!(opt4.except_interface, vec!["eth0".to_string(), "wlan*".to_string()]);
 
-        let opt5 = Opt::parse_from(["chinadns-rs", "-z", "--tls-bind-interfaces"]);
+        let opt5 = Opt::parse_from(["polardns", "-z", "--tls-bind-interfaces"]);
         assert!(opt5.bind_interfaces);
         assert!(opt5.tls_bind_interfaces);
 
-        let opt6 = Opt::parse_from(["chinadns-rs", "--bind-dynamic", "--tls-bind-dynamic"]);
+        let opt6 = Opt::parse_from(["polardns", "--bind-dynamic", "--tls-bind-dynamic"]);
         assert!(opt6.bind_dynamic);
         assert!(opt6.tls_bind_dynamic);
         
-        let opt7 = Opt::parse_from(["chinadns-rs", "--bind", "--tls-bind"]);
+        let opt7 = Opt::parse_from(["polardns", "--bind", "--tls-bind"]);
         assert!(opt7.bind_dynamic);
         assert!(opt7.tls_bind_dynamic);
     }
 
     #[test]
     fn test_bind_interfaces_and_dynamic_mutually_exclusive() {
-        let opt_both = Opt::try_parse_from(["chinadns-rs", "-z", "--bind-dynamic"]).unwrap();
+        let opt_both = Opt::try_parse_from(["polardns", "-z", "--bind-dynamic"]).unwrap();
         assert!(opt_both.validate().is_err());
     }
 
@@ -1096,21 +1117,21 @@ mod tests {
 
     #[test]
     fn test_strict_sni_parse() {
-        let opt = Opt::parse_from(["chinadns-rs", "--strict-sni"]);
+        let opt = Opt::parse_from(["polardns", "--strict-sni"]);
         assert!(opt.strict_sni);
     }
 
     #[cfg(feature = "tls12")]
     #[test]
     fn test_enable_tls12_parse_when_feature_enabled() {
-        let opt = Opt::parse_from(["chinadns-rs", "--enable-tls12"]);
+        let opt = Opt::parse_from(["polardns", "--enable-tls12"]);
         assert!(opt.enable_tls12);
     }
 
     #[cfg(not(feature = "tls12"))]
     #[test]
     fn test_enable_tls12_rejected_without_feature() {
-        assert!(Opt::try_parse_from(["chinadns-rs", "--enable-tls12"]).is_err());
+        assert!(Opt::try_parse_from(["polardns", "--enable-tls12"]).is_err());
     }
 
     #[test]
@@ -1137,7 +1158,7 @@ mod tests {
         let path = tmp_file.path().to_string_lossy().to_string();
         
         let args = vec![
-            "chinadns-rs".to_string(),
+            "polardns".to_string(),
             "-C".to_string(),
             path,
             "-l1054".to_string(),
@@ -1163,7 +1184,7 @@ mod tests {
         let path = tmp_file.path().to_string_lossy().to_string();
         
         let args = vec![
-            "chinadns-rs".to_string(),
+            "polardns".to_string(),
             "-C".to_string(),
             path,
             "-vl".to_string(),
@@ -1212,7 +1233,7 @@ mod tests {
         
         let path = tmp_file.path().to_string_lossy().to_string();
         let args = vec![
-            "chinadns-rs".to_string(),
+            "polardns".to_string(),
             "-C".to_string(),
             path,
         ];
@@ -1224,7 +1245,7 @@ mod tests {
     #[test]
     fn test_tls_standalone_options_parsing() {
         let opt = Opt::parse_from([
-            "chinadns-rs",
+            "polardns",
             "--tls-interface",
             "ppp0,wg0",
             "--tls-bind-addr",
@@ -1241,7 +1262,7 @@ mod tests {
     #[test]
     fn test_worker_threads_and_stack_size_parsing() {
         let opt = Opt::parse_from([
-            "chinadns-rs",
+            "polardns",
             "--worker-threads",
             "2",
             "--thread-stack-size",
@@ -1254,7 +1275,7 @@ mod tests {
     #[test]
     fn test_timeout_and_interval_options_parsing() {
         let opt = Opt::parse_from([
-            "chinadns-rs",
+            "polardns",
             "--queue-timeout-ms",
             "3500",
             "--rtt-probe-interval",

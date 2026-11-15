@@ -271,7 +271,7 @@ fn build_local_tls_config(
 
 pub async fn run_server(opt: Arc<Opt>) -> anyhow::Result<()> {
     // 1. Upstream configuration
-    let china_dns_raw = opt.direct_dns.as_deref().unwrap_or("114.114.114.114");
+    let direct_dns_raw = opt.direct_dns.as_deref().unwrap_or("114.114.114.114");
     let trust_dns_raw = opt.proxy_dns.as_deref().unwrap_or("8.8.8.8");
     let fallback_dns_raw = opt.fallback_dns.as_deref().unwrap_or("114.114.114.114");
 
@@ -310,7 +310,7 @@ pub async fn run_server(opt: Arc<Opt>) -> anyhow::Result<()> {
     };
 
     let mut tag_to_upstreams: FxHashMap<Tag, Vec<UpstreamProtocol>> = FxHashMap::default();
-    tag_to_upstreams.insert(Tag::Direct, parse_upstreams(china_dns_raw));
+    tag_to_upstreams.insert(Tag::Direct, parse_upstreams(direct_dns_raw));
     tag_to_upstreams.insert(Tag::Proxy, parse_upstreams(trust_dns_raw));
     let fallback_upstreams = parse_fallback_upstreams(fallback_dns_raw);
     if opt.fallback_dns.is_some() && fallback_upstreams.is_empty() {
@@ -335,11 +335,11 @@ pub async fn run_server(opt: Arc<Opt>) -> anyhow::Result<()> {
         let mut tag_to_sets: FxHashMap<Tag, Vec<crate::ipset::SetTarget>> = FxHashMap::default();
 
         // Merge Tag::Direct sets
-        let mut chn_set_strs = opt.direct_sets.clone();
+        let mut direct_set_strs = opt.direct_sets.clone();
         if let Some(ref legacy) = opt.add_tagchn_ip {
-            chn_set_strs.extend(legacy.split(',').map(|s| s.to_string()));
+            direct_set_strs.extend(legacy.split(',').map(|s| s.to_string()));
         }
-        for s in chn_set_strs {
+        for s in direct_set_strs {
             if let Some(target) = crate::ipset::SetTarget::parse(&s) {
                 tag_to_sets.entry(Tag::Direct).or_default().push(target);
             }
@@ -1545,7 +1545,7 @@ pub async fn run_server(opt: Arc<Opt>) -> anyhow::Result<()> {
         cache.save_to_db(db_path);
     }
 
-    info!("chinadns-rs shutdown complete.");
+    info!("polardns shutdown complete.");
     Ok(())
 }
 

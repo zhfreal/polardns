@@ -1,6 +1,6 @@
 # Clash/Mihomo classical rule-provider format.
 # A trailing target token such as PROXY is accepted for compatibility, but
-# chinadns-rs uses the tag assigned to this file in upstreams.rules.
+# polardns uses the tag assigned to this file in upstreams.rules.
 
 DOMAIN,google.com,PROXY
 DOMAIN-SUFFIX,googleapis.com,PROXY

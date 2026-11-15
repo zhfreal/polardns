@@ -40,8 +40,8 @@ fn main() {
         features.join(",")
     };
 
-    println!("cargo:rustc-env=CHINADNS_RS_GIT_COMMIT={commit}");
-    println!("cargo:rustc-env=CHINADNS_RS_ENABLED_FEATURES={features_str}");
+    println!("cargo:rustc-env=POLARDNS_GIT_COMMIT={commit}");
+    println!("cargo:rustc-env=POLARDNS_ENABLED_FEATURES={features_str}");
 }
 
 fn emit_git_rerun_hints() {

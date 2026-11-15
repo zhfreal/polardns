@@ -1,16 +1,16 @@
 [Unit]
-Description=chinadns-rs DNS proxy
-Documentation=https://github.com/zhfreal/chinadns-rs
+Description=PolarDNS - next-generation high-performance rule-based DNS proxy/router
+Documentation=https://github.com/zhfreal/polardns
 Wants=network-online.target
 After=network-online.target
 
 [Service]
 Type=simple
-User=chinadns
-Group=chinadns
+User=polardns
+Group=polardns
 
 # Adjust the binary path if you install to /usr/bin or another location.
-ExecStart=/usr/local/bin/chinadns-rs --config /etc/chinadns-rs/config.toml
+ExecStart=/usr/local/bin/polardns --config /etc/polardns/config.toml
 ExecReload=/bin/kill -HUP $MAINPID
 
 Restart=on-failure
@@ -23,11 +23,11 @@ CapabilityBoundingSet=CAP_NET_BIND_SERVICE CAP_NET_ADMIN CAP_NET_RAW
 NoNewPrivileges=true
 
 # Runtime and writable paths used by examples/config.toml.
-RuntimeDirectory=chinadns-rs
-StateDirectory=chinadns-rs
-CacheDirectory=chinadns-rs
-LogsDirectory=chinadns-rs
-ReadWritePaths=/var/cache/chinadns-rs /var/log/chinadns-rs /run/chinadns-rs
+RuntimeDirectory=polardns
+StateDirectory=polardns
+CacheDirectory=polardns
+LogsDirectory=polardns
+ReadWritePaths=/var/cache/polardns /var/log/polardns /run/polardns
 
 # Conservative service hardening. Relax these if your local deployment needs more access.
 ProtectSystem=strict

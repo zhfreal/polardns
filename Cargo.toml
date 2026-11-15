@@ -4,7 +4,7 @@ version = "1.23.0"
 edition = "2024"
 license = "AGPL-3.0-only"
 description = "A next-generation high-performance rule-based DNS proxy/router."
-repository = "https://github.com/polardns/polardns"
+repository = "https://github.com/zhfreal/polardns"
 
 [features]
 default = [

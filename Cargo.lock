@@ -1334,7 +1334,7 @@ checksum = "f6b464fbc74e149a392436b17d523f769e057cb6877f6a5c4618bc6f11800548"
 
 [[package]]
 name = "polardns"
-version = "1.23.0"
+version = "1.23.1"
 dependencies = [
  "aho-corasick",
  "anyhow",

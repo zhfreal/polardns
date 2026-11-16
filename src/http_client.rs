@@ -259,12 +259,9 @@ impl HttpClient {
     }
 
     pub async fn get(&self, url: &str) -> anyhow::Result<Bytes> {
-        let uri: http::Uri = url.parse()?;
-        let host_header = format_http_host_header(&uri)?;
         let req = http::Request::builder()
             .method("GET")
             .uri(url)
-            .header("host", &host_header)
             .header("user-agent", &self.user_agent)
             .body(Full::new(Bytes::new()))?;
 
@@ -280,12 +277,9 @@ impl HttpClient {
     pub async fn get_to_file(&self, url: &str, file_path: &str) -> anyhow::Result<()> {
         use http_body_util::BodyExt;
         use tokio::io::AsyncWriteExt;
-        let uri: http::Uri = url.parse()?;
-        let host_header = format_http_host_header(&uri)?;
         let req = http::Request::builder()
             .method("GET")
             .uri(url)
-            .header("host", &host_header)
             .header("user-agent", &self.user_agent)
             .body(Full::new(Bytes::new()))?;
 
@@ -314,14 +308,11 @@ impl HttpClient {
         if body.len() < 2 {
             anyhow::bail!("DNS query payload is too short for transaction ID validation");
         }
-        let uri: http::Uri = url.parse()?;
-        let host_header = format_http_host_header(&uri)?;
         let mut retries = 0;
         loop {
             let req = http::Request::builder()
                 .method("POST")
                 .uri(url)
-                .header("host", &host_header)
                 .header("user-agent", &self.user_agent)
                 .header("content-type", "application/dns-message")
                 .header("accept", "application/dns-message")
@@ -374,6 +365,16 @@ mod tests {
     async fn test_http_client_new() {
         let client = HttpClient::new(Duration::from_secs(5), false, None, DEFAULT_USER_AGENT.to_string());
         assert!(client.is_ok());
+    }
+
+    #[cfg(all(feature = "boring", not(feature = "rustls-stack")))]
+    #[tokio::test]
+    async fn test_doh_post_dns_wire_google() {
+        let client = HttpClient::new(Duration::from_secs(5), true, None, DEFAULT_USER_AGENT.to_string()).unwrap();
+        // example.com A query
+        let query = bytes::Bytes::from_static(b"\x12\x34\x01\x00\x00\x01\x00\x00\x00\x00\x00\x00\x07example\x03com\x00\x00\x01\x00\x01");
+        let resp = client.post_dns_wire("https://dns.google/dns-query", query).await;
+        assert!(resp.is_ok(), "Google DoH POST query failed: {:?}", resp.err());
     }
 
     #[test]

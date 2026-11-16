@@ -1,6 +1,6 @@
 [package]
 name = "polardns"
-version = "1.23.0"
+version = "1.23.1"
 edition = "2024"
 license = "AGPL-3.0-only"
 description = "A next-generation high-performance rule-based DNS proxy/router."

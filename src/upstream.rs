@@ -1128,6 +1128,16 @@ async fn resolve_hostname(
     mux: Option<Arc<UdpMultiplexer>>,
     pool: Arc<ConnectionPool>,
 ) -> Option<SocketAddr> {
+    // 0. Try static hosts / dns-rr-ip records first
+    let ips_v4 = crate::hosts::get_ips(hostname, 1);
+    if let Some(&ip) = ips_v4.first() {
+        return Some(SocketAddr::new(ip, port));
+    }
+    let ips_v6 = crate::hosts::get_ips(hostname, 28);
+    if let Some(&ip) = ips_v6.first() {
+        return Some(SocketAddr::new(ip, port));
+    }
+
     let mut cache_key_a = compact_str::CompactString::default();
     let mut cache_key_aaaa = compact_str::CompactString::default();
     use std::fmt::Write;

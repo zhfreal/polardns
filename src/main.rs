@@ -54,18 +54,34 @@ fn resolve_rule_path(file: &str, workspace: &Option<String>, fallback_dir: &std:
 }
 
 #[cfg(feature = "jemalloc")]
+#[repr(transparent)]
+pub struct ConstCharPtr(pub *const std::ffi::c_char);
+#[cfg(feature = "jemalloc")]
+unsafe impl Sync for ConstCharPtr {}
+
+#[cfg(feature = "jemalloc")]
 #[unsafe(no_mangle)]
-pub static malloc_conf: &[u8] = b"background_thread:true,dirty_decay_ms:1000,muzzy_decay_ms:1000,narenas:2\0";
+pub static _rjem_malloc_conf: ConstCharPtr =
+    ConstCharPtr(c"thp:never,background_thread:true,dirty_decay_ms:0,muzzy_decay_ms:0,narenas:1".as_ptr());
+
+#[cfg(feature = "jemalloc")]
+#[unsafe(no_mangle)]
+pub static malloc_conf: ConstCharPtr =
+    ConstCharPtr(c"thp:never,background_thread:true,dirty_decay_ms:0,muzzy_decay_ms:0,narenas:1".as_ptr());
 
 fn main() -> anyhow::Result<()> {
+    #[cfg(target_os = "linux")]
+    unsafe {
+        libc::prctl(libc::PR_SET_THP_DISABLE, 1, 0, 0, 0);
+    }
     #[cfg(feature = "jemalloc")]
     {
         let _ = tikv_jemalloc_ctl::epoch::advance();
         let _ = tikv_jemalloc_ctl::background_thread::write(true);
         // SAFETY: update arena decay intervals for all arenas
         unsafe {
-            let _ = tikv_jemalloc_ctl::raw::update(b"arenas.dirty_decay_ms\0", 1000isize);
-            let _ = tikv_jemalloc_ctl::raw::update(b"arenas.muzzy_decay_ms\0", 1000isize);
+            let _ = tikv_jemalloc_ctl::raw::update(b"arenas.dirty_decay_ms\0", 0isize);
+            let _ = tikv_jemalloc_ctl::raw::update(b"arenas.muzzy_decay_ms\0", 0isize);
         }
     }
 
